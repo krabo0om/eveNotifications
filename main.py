@@ -69,9 +69,9 @@ def do_stuff():
     global iteration
     km = KeyManager(key_store)
     logging.info('starting scan')
-    s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    s = smtplib.SMTP_SSL(credentials.smtp_server, credentials.smtp_port)
     s.ehlo()
-    s.login(credentials.email, credentials.emailPW)
+    s.login(credentials.email_user, credentials.email_password)
     logging.info('connected to mail server')
     for key in km.keys:
         kit = iteration[tuple(key)]
@@ -123,7 +123,7 @@ def do_stuff():
 
 
 if __name__ == '__main__':
-    cmds = ['add', 'list', 'remove', 'start']
+    cmds = ['add', 'list', 'remove', 'start', 'test']
     parser = argparse.ArgumentParser('an eve api scanner and mailer daemon')
     parser.add_argument('action', help='command: {cmds}'.format(cmds=', '.join(cmds)), choices=cmds)
     parser.add_argument('-ks', '--key_store', help='where to store the api keys', default='keys.json')
@@ -158,5 +158,24 @@ if __name__ == '__main__':
         except (KeyboardInterrupt, SystemExit):
             scheduler.shutdown(wait=False)
             print('scheduler stopped')
+    elif args.action == 'test':
+        target = input('target mail address for test: ')
+        s = smtplib.SMTP_SSL(credentials.smtp_server, credentials.smtp_port)
+        s.ehlo()
+        s.login(credentials.email_user, credentials.email_password)
+        print('logged in at mail server')
+        msg = '\r\n'.join([
+            'From: {email}'.format(email=credentials.email),
+            'To: {recv}'.format(recv=target),
+            'Subject: EVE Notifications Test',
+            '',
+            "looks like it's working"
+        ])
+        sent = s.sendmail(credentials.email, [target], msg)
+        if len(sent) == 0:
+            print('should have worked')
+        else:
+            print('error with address: {s}'.format(s=sent))
+        s.close()
     else:
         print('unknown action {act}'.format(act=args.action))
