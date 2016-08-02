@@ -19,7 +19,7 @@ class KeyManager:
             self.keys = []
 
     def add(self, api_key, vcode, char_id, name, email):
-        self.keys.append((api_key, vcode, char_id, name, email))
+        self.keys.append([api_key, vcode, char_id, name, email])
         self.__save()
 
     def remove(self, index):
