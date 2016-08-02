@@ -10,4 +10,7 @@ If there is a new notification an email will be send to the associated address. 
 * start - starts the script, first poll after an hour
 
 #Setup#
-change the email address and password in the credentials.py file
+change the email address and password in the credentials.py file  
+requires pip packages:
+ * evelink
+ * apscheduler
