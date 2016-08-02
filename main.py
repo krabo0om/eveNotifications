@@ -175,7 +175,7 @@ if __name__ == '__main__':
         for k in KeyManager(key_store).keys:
             iteration[tuple(k)] = 0  # init 24 hour counter for every key
         scheduler = BlockingScheduler(timezone=utc)
-        scheduler.add_job(do_stuff, 'interval', seconds=1)
+        scheduler.add_job(do_stuff, 'interval', hours=1)
         try:
             print('starting scheduler...')
             scheduler.start()
