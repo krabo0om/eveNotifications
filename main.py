@@ -119,10 +119,12 @@ def do_stuff():
             subject = '{nonn} new notification(s) for {name}'.format(name=rec_name, nonn=len(res.result))
             lines = []
             for r in res.result:
-                if r['read'] == 1:
+                noti = res.result[r]
+                if noti['read'] == 1:
                     continue  # was already read in client
-                lines.append('{date}: {type} from {sender}'.format(date=r['sentDate'], type=id_map[r['typeID']],
-                                                                   sender=r['senderName']))
+                #lines.append('{date}: {type} from {sender}'.format(date=noti['sentDate'], type=id_map[noti['typeID']],
+                 #                                                  sender=noti['senderName']))
+                lines.append('type: {type}'.format(type=id_map[noti['type_id']]))
             text = 'Character {name} has the following new notifications: \r\n'.format(name=rec_name)
             text += '\r\n'.join(lines)
 
@@ -173,7 +175,7 @@ if __name__ == '__main__':
         for k in KeyManager(key_store).keys:
             iteration[tuple(k)] = 0  # init 24 hour counter for every key
         scheduler = BlockingScheduler(timezone=utc)
-        scheduler.add_job(do_stuff, 'interval', hours=1)
+        scheduler.add_job(do_stuff, 'interval', seconds=1)
         try:
             print('starting scheduler...')
             scheduler.start()
