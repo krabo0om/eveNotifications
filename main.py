@@ -3,6 +3,7 @@ import logging
 import smtplib
 import evelink
 from evelink.api import APIError
+from pytz import utc
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 import credentials
@@ -63,6 +64,27 @@ def rm_char():
     except (ValueError, IndexError):
         print('wrong input')
         exit(2)
+
+
+def test_mail():
+    target = input('target mail address for test: ')
+    s = smtplib.SMTP_SSL(credentials.smtp_server, credentials.smtp_port)
+    s.ehlo()
+    s.login(credentials.email_user, credentials.email_password)
+    print('logged in at mail server')
+    msg = '\r\n'.join([
+        'From: {email}'.format(email=credentials.email),
+        'To: {recv}'.format(recv=target),
+        'Subject: EVE Notifications Test',
+        '',
+        "looks like it's working"
+    ])
+    sent = s.sendmail(credentials.email, [target], msg)
+    if len(sent) == 0:
+        print('should have worked')
+    else:
+        print('error with address: {s}'.format(s=sent))
+    s.close()
 
 
 def do_stuff():
@@ -150,7 +172,7 @@ if __name__ == '__main__':
             exit(3)
         for k in KeyManager(key_store).keys:
             iteration[tuple(k)] = 0  # init 24 hour counter for every key
-        scheduler = BlockingScheduler()
+        scheduler = BlockingScheduler(timezone=utc)
         scheduler.add_job(do_stuff, 'interval', hours=1)
         try:
             print('starting scheduler...')
@@ -159,23 +181,6 @@ if __name__ == '__main__':
             scheduler.shutdown(wait=False)
             print('scheduler stopped')
     elif args.action == 'test':
-        target = input('target mail address for test: ')
-        s = smtplib.SMTP_SSL(credentials.smtp_server, credentials.smtp_port)
-        s.ehlo()
-        s.login(credentials.email_user, credentials.email_password)
-        print('logged in at mail server')
-        msg = '\r\n'.join([
-            'From: {email}'.format(email=credentials.email),
-            'To: {recv}'.format(recv=target),
-            'Subject: EVE Notifications Test',
-            '',
-            "looks like it's working"
-        ])
-        sent = s.sendmail(credentials.email, [target], msg)
-        if len(sent) == 0:
-            print('should have worked')
-        else:
-            print('error with address: {s}'.format(s=sent))
-        s.close()
+        test_mail()
     else:
         print('unknown action {act}'.format(act=args.action))
