@@ -120,8 +120,6 @@ def do_stuff():
                 iteration[tuple(key)] = kit
                 continue
         else:
-            subject = '{nonn} new notification(s) for {name}'.format(name=rec_name, nonn=len(res.result))
-            logging.info('{subj}'.format(subj=subject))
             lines = []
             for r in res.result:
                 noti = res.result[r]
@@ -136,6 +134,8 @@ def do_stuff():
                 notify_store.add(rec_name, noti['id'])
             if len(lines) == 0:
                 continue  # every notification was either read or already sent, nothing new
+            subject = '{nonn} new notification(s) for {name}'.format(name=rec_name, nonn=len(lines))
+            logging.info('{subj}'.format(subj=subject))
             text = 'Character {name} has the following new notifications: \r\n'.format(name=rec_name)
             text += '\r\n'.join(lines)
 
