@@ -9,9 +9,12 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 import credentials
 from key_manager import KeyManager
 from notificationIDmap import id_map
+from storage_dict import StorageDictList
 
-key_store = ''
+key_store_path = ''
+notify_store_path = ''
 iteration = dict()  # checks every hour, every 24 hours a 'i'm still here' mail will be send, this is the 24 counter
+notify_store = dict()  # maps notification IDs to a char name to prevent sending mails about the same notification
 
 
 def add_char():
@@ -32,7 +35,7 @@ def add_char():
             charNumber = int(input('Select a Character: '))
             email = input('Associated email address: ')
             name = chars.result[num2char[charNumber]]['name']
-            km = KeyManager(key_store)
+            km = KeyManager(key_store_path)
             km.add(new_key, new_vcode, num2char[charNumber], name, email)
             print('Added character {name} successfully'.format(name=name))
         except ValueError:
@@ -45,7 +48,7 @@ def add_char():
 
 
 def list_char():
-    km = KeyManager(key_store)
+    km = KeyManager(key_store_path)
     num = 0
     if len(km.keys) == 0:
         print('no keys, add one with the add command')
@@ -59,7 +62,7 @@ def rm_char():
     list_char()
     try:
         rm = int(input('which character should be deleted: '))
-        km = KeyManager(key_store)
+        km = KeyManager(key_store_path)
         km.remove(rm)
     except (ValueError, IndexError):
         print('wrong input')
@@ -88,8 +91,8 @@ def test_mail():
 
 
 def do_stuff():
-    global iteration
-    km = KeyManager(key_store)
+    global iteration, notify_store
+    km = KeyManager(key_store_path)
     logging.info('starting scan')
     s = smtplib.SMTP_SSL(credentials.smtp_server, credentials.smtp_port)
     s.ehlo()
@@ -121,10 +124,14 @@ def do_stuff():
             for r in res.result:
                 noti = res.result[r]
                 if noti['read'] == 1:
+                    notify_store.remove(rec_name, noti['id'])
                     continue  # was already read in client
-                #lines.append('{date}: {type} from {sender}'.format(date=noti['sentDate'], type=id_map[noti['typeID']],
-                 #                                                  sender=noti['senderName']))
-                lines.append('type: {type}'.format(type=id_map[noti['type_id']]))
+                if notify_store.contains(rec_name, noti['id']):
+                    continue  # was already sent once
+                lines.append('type: {type}'.format(type=id_map[noti['type_id']]))  # todo timestamp
+                notify_store.add(rec_name, noti['id'])
+            if len(lines) == 0:
+                continue    # every notification was either read or already sent, nothing new
             text = 'Character {name} has the following new notifications: \r\n'.format(name=rec_name)
             text += '\r\n'.join(lines)
 
@@ -152,11 +159,14 @@ if __name__ == '__main__':
     parser.add_argument('action', help='command: {cmds}'.format(cmds=', '.join(cmds)), choices=cmds)
     parser.add_argument('-ks', '--key_store', help='where to store the api keys', default='keys.json')
     parser.add_argument('-l', '--log', help='log file location', default='log.log')
+    parser.add_argument('-ns', '--notify_store', help='where to store already sent notifies', default='notifies.json')
     args = parser.parse_args()
 
-    key_store = args.key_store
+    key_store_path = args.key_store
+    notify_store_path = args.notify_store
 
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s', filename=args.log, filemode='w', level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s', filename=args.log, filemode='w',
+                        level=logging.INFO)
 
     if args.action == 'add':
         add_char()
@@ -168,12 +178,16 @@ if __name__ == '__main__':
         rm_char()
 
     elif args.action == 'start':
-        km = KeyManager(key_store)
+        km = KeyManager(key_store_path)
         if len(km.keys) == 0:
             print('no keys, add one with the add command')
             exit(3)
-        for k in KeyManager(key_store).keys:
+        for k in KeyManager(key_store_path).keys:
             iteration[tuple(k)] = 0  # init 24 hour counter for every key
+
+        notify_store = StorageDictList(notify_store_path)
+        do_stuff()
+        exit()
         scheduler = BlockingScheduler(timezone=utc)
         scheduler.add_job(do_stuff, 'interval', hours=1)
         try:

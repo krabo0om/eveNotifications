@@ -1,6 +1,8 @@
 # standard key store
 keys.json
 
+# standard notifications store
+notifies.json
 
 # Created by https://www.gitignore.io/api/pytho,pycharm,python
 
