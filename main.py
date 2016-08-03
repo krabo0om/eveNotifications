@@ -1,6 +1,8 @@
 import argparse
 import logging
 import smtplib
+from datetime import datetime
+
 import evelink
 from evelink.api import APIError
 from pytz import utc
@@ -128,10 +130,12 @@ def do_stuff():
                     continue  # was already read in client
                 if notify_store.contains(rec_name, noti['id']):
                     continue  # was already sent once
-                lines.append('type: {type}'.format(type=id_map[noti['type_id']]))  # todo timestamp
+                lines.append('{time}: {type}'.format(
+                    time=datetime.utcfromtimestamp(int(noti['timestamp'])).isoformat().replace('T', ' '),
+                    type=id_map[noti['type_id']]))
                 notify_store.add(rec_name, noti['id'])
             if len(lines) == 0:
-                continue    # every notification was either read or already sent, nothing new
+                continue  # every notification was either read or already sent, nothing new
             text = 'Character {name} has the following new notifications: \r\n'.format(name=rec_name)
             text += '\r\n'.join(lines)
 
