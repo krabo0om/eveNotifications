@@ -120,8 +120,8 @@ def do_stuff():
                 iteration[tuple(key)] = kit
                 continue
         else:
-            logging.info('{nonn} new notification(s) for {name}'.format(name=rec_name, nonn=len(res.result)))
             subject = '{nonn} new notification(s) for {name}'.format(name=rec_name, nonn=len(res.result))
+            logging.info('{subj}'.format(subj=subject))
             lines = []
             for r in res.result:
                 noti = res.result[r]
@@ -150,7 +150,8 @@ def do_stuff():
         sent = s.sendmail(credentials.email, [receiver], msg)
         if len(sent) == 0:
             logging.info(
-                'successfully sent mail to {recv}: {subj} - {text}'.format(recv=receiver, subj=subject, text=text))
+                'successfully sent mail to {recv}: {subj} - {text}'.format(recv=receiver, subj=subject,
+                                                                           text=text.replace('\r\n', '\\r\\n')))
         else:
             logging.warning('error with receiver {recv}: {error}'.format(recv=receiver, error=str(sent)))
     s.close()
@@ -190,8 +191,6 @@ if __name__ == '__main__':
             iteration[tuple(k)] = 0  # init 24 hour counter for every key
 
         notify_store = StorageDictList(notify_store_path)
-        do_stuff()
-        exit()
         scheduler = BlockingScheduler(timezone=utc)
         scheduler.add_job(do_stuff, 'interval', hours=1)
         try:
