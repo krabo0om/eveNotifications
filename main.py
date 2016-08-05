@@ -109,7 +109,12 @@ def do_stuff():
         rec_name = key[3]
         receiver = key[4]
 
-        if len(res.result) == 0:
+        new_results = {}
+        for r in res.result:    # filter old notifications
+            if not notify_store.contains(rec_name, res.result[r]['id']):
+                new_results[r] = res.result[r]
+
+        if len(new_results) == 0:
             kit += 1
             if kit == 24:
                 subject = 'No new notifications for {name}'.format(name=rec_name)
@@ -121,25 +126,23 @@ def do_stuff():
                 continue
         else:
             lines = []
-            for r in res.result:
-                noti = res.result[r]
+            for r in new_results:
+                noti = new_results[r]
                 if noti['read'] == 1:
                     notify_store.remove(rec_name, noti['id'])
-                    continue  # was already read in client
-                if notify_store.contains(rec_name, noti['id']):
-                    continue  # was already sent once
+                    continue  # was already read in client and should not come again
                 lines.append('{time}: {type}'.format(
                     time=datetime.utcfromtimestamp(int(noti['timestamp'])).isoformat().replace('T', ' '),
                     type=id_map[noti['type_id']]))
                 notify_store.add(rec_name, noti['id'])
             if len(lines) == 0:
-                continue  # every notification was either read or already sent, nothing new
+                continue  # every notification was already read, nothing new
             subject = '{nonn} new notification(s) for {name}'.format(name=rec_name, nonn=len(lines))
             logging.info('{subj}'.format(subj=subject))
             text = 'Character {name} has the following new notifications: \r\n'.format(name=rec_name)
             text += '\r\n'.join(lines)
 
-        iteration[tuple(key)] = 0  # reset iteration counter
+        iteration[tuple(key)] = 0  # reset iteration counter, either 24h have passed or new notifications
         msg = '\r\n'.join([
             'From: {email}'.format(email=credentials.email),
             'To: {recv}'.format(recv=receiver),
