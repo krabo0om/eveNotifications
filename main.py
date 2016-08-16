@@ -10,7 +10,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 import credentials
 from key_manager import KeyManager
-from notificationIDmap import id_map
+import notificationIDmap
 from storage_dict import StorageDictList
 
 key_store_path = ''
@@ -133,7 +133,7 @@ def do_stuff():
                     continue  # was already read in client and should not come again
                 lines.append('{time}: {type}'.format(
                     time=datetime.utcfromtimestamp(int(noti['timestamp'])).isoformat().replace('T', ' '),
-                    type=id_map[noti['type_id']]))
+                    type=notificationIDmap.map_id_to_text(noti['type_id'])))
                 notify_store.add(rec_name, noti['id'])
             if len(lines) == 0:
                 continue  # every notification was already read, nothing new
