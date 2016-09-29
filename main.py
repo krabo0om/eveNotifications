@@ -78,7 +78,7 @@ def test_mail():
     s.login(credentials.email_user, credentials.email_password)
     print('logged in at mail server')
     msg = '\r\n'.join([
-        'From: {email}'.format(email=credentials.email),
+        'From: {email}'.format(email='EVE Notifications'),
         'To: {recv}'.format(recv=target),
         'Subject: EVE Notifications Test',
         '',
@@ -144,7 +144,7 @@ def do_stuff():
 
         iteration[tuple(key)] = 0  # reset iteration counter, either 24h have passed or new notifications
         msg = '\r\n'.join([
-            'From: {email}'.format(email=credentials.email),
+            'From: {email}'.format(email='EVE Notifications'),
             'To: {recv}'.format(recv=receiver),
             'Subject: {sub}'.format(sub=subject),
             '',
